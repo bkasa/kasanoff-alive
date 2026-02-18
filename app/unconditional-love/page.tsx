@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, useRef } from "react";
 
 const SYSTEM_PROMPT = `You are a warm, unhurried guide helping someone explore the experience of unconditional love — not as a concept to understand, but as a living force to feel and inhabit.
