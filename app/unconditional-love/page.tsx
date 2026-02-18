@@ -182,7 +182,7 @@ export default function UnconditionalLoveGuide() {
         }),
       });
       const data = await res.json();
-      const text = data.content?.[0]?.text?.trim() || "";
+      const text = data.text?.trim() || "";
       if (!text) throw new Error("Empty response");
       setMessages([
         { role: "user", content: "I've just read the four opening ideas. I'm here. I want to go deeper." },
@@ -215,7 +215,7 @@ export default function UnconditionalLoveGuide() {
         }),
       });
       const data = await res.json();
-      const text = data.content?.[0]?.text?.trim() || "";
+      const text = data.text?.trim() || "";
       if (!text) throw new Error("Empty response");
       const withReply = [...next, { role: "assistant", content: text }];
       setMessages(withReply);
