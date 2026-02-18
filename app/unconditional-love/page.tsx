@@ -152,7 +152,7 @@ export default function UnconditionalLoveGuide() {
   const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [newMessageIndex, setNewMessageIndex] = useState(null);
+  const [newMessageIndex, setNewMessageIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
