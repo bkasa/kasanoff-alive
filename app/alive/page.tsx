@@ -15,16 +15,14 @@ export default function AlivePage() {
     { role: 'assistant', content: INITIAL_GREETING },
   ]);
   const [input, setInput] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -35,15 +33,14 @@ export default function AlivePage() {
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: trimmed };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
-    setIsStreaming(true);
+    setIsLoading(true);
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -55,29 +52,16 @@ export default function AlivePage() {
         body: JSON.stringify({ messages: updatedMessages }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
         throw new Error('Failed to get response');
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
-
-      const decoder = new TextDecoder();
-      let assistantContent = '';
-
-      // Add empty assistant message
-      setMessages([...updatedMessages, { role: 'assistant', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        assistantContent += decoder.decode(value, { stream: true });
-        setMessages([
-          ...updatedMessages,
-          { role: 'assistant', content: assistantContent },
-        ]);
-      }
+      setMessages([
+        ...updatedMessages,
+        { role: 'assistant', content: data.text },
+      ]);
     } catch (error) {
       console.error('Error:', error);
       setMessages([
@@ -89,11 +73,10 @@ export default function AlivePage() {
         },
       ]);
     } finally {
-      setIsStreaming(false);
-      // Refocus input
+      setIsLoading(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
-  }, [input, isStreaming, messages]);
+  }, [input, isLoading, messages]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -102,13 +85,6 @@ export default function AlivePage() {
     }
   };
 
-  const startNewConversation = () => {
-    setMessages([{ role: 'assistant', content: INITIAL_GREETING }]);
-    setInput('');
-    setIsStreaming(false);
-  };
-
-  // Render message content with paragraph breaks
   const renderContent = (content: string) => {
     const paragraphs = content.split('\n\n').filter(Boolean);
     if (paragraphs.length <= 1) {
@@ -146,7 +122,7 @@ export default function AlivePage() {
           </div>
         ))}
 
-        {isStreaming && messages[messages.length - 1]?.content === '' && (
+        {isLoading && (
           <div className="typing-indicator">
             <div className="typing-dot" />
             <div className="typing-dot" />
@@ -165,14 +141,14 @@ export default function AlivePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Share what\u2019s present for you\u2026"
+            placeholder="Share what&#x2019;s present for you&#x2026;"
             rows={1}
-            disabled={isStreaming}
+            disabled={isLoading}
           />
           <button
             className="send-button"
             onClick={sendMessage}
-            disabled={!input.trim() || isStreaming}
+            disabled={!input.trim() || isLoading}
             aria-label="Send"
           >
             <svg

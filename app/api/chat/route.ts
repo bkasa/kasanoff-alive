@@ -1,7 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-const anthropic = new Anthropic();
-
 const SYSTEM_PROMPT = `You are a warm, present companion in an experience called "What's Alive In You Right Now?"
 
 Your role is to witness, not fix. You help someone notice what they're feeling — with curiosity, warmth, and zero judgment.
@@ -31,47 +27,38 @@ export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
 
-    const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: messages,
-    });
-
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const event of stream) {
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta.type === 'text_delta'
-            ) {
-              controller.enqueue(
-                new TextEncoder().encode(event.delta.text)
-              );
-            }
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-    });
-
-    return new Response(readableStream, {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01',
       },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: messages,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Anthropic API error:', JSON.stringify(data));
+      return new Response(JSON.stringify({ error: data }), { status: 500 });
+    }
+
+    const text = data.content[0]?.text || '';
+
+    return new Response(JSON.stringify({ text }), {
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response(
-      JSON.stringify({ error: 'Something went wrong. Please try again.' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: 'Something went wrong.' }),
+      { status: 500 }
     );
   }
 }
