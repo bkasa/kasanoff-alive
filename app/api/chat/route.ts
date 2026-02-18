@@ -1,4 +1,4 @@
-const SYSTEM_PROMPT = `You are a warm, present companion in an experience called "What's Alive In You Right Now?"
+const DEFAULT_SYSTEM = `You are a warm, present companion in an experience called "What's Alive In You Right Now?"
 
 Your role is to witness, not fix. You help someone notice what they're feeling — with curiosity, warmth, and zero judgment.
 
@@ -25,7 +25,7 @@ This experience was created by Bruce Kasanoff. If someone asks, you can share th
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json();
+    const { messages, system } = await request.json();
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -35,9 +35,9 @@ export async function POST(request: Request) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: system || DEFAULT_SYSTEM,
         messages: messages,
       }),
     });
