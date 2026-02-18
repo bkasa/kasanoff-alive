@@ -149,7 +149,7 @@ function Message({ role, content, isNew }: { role: string; content: string; isNe
 export default function UnconditionalLoveGuide() {
   const [phase, setPhase] = useState("intro");
   const [visibleIdeas, setVisibleIdeas] = useState(0);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [newMessageIndex, setNewMessageIndex] = useState(null);
