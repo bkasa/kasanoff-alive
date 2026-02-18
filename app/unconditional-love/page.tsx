@@ -113,7 +113,7 @@ function TypingIndicator() {
   );
 }
 
-function Message({ role, content, isNew }) {
+function Message({ role, content, isNew }: { role: string; content: string; isNew: boolean }) {
   const isUser = role === "user";
   return (
     <div style={{
