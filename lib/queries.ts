@@ -5,7 +5,7 @@ import db from './db';
 export async function upsertCustomer(email: string) {
   await db.execute({
     sql: `INSERT INTO customers (email) VALUES (?) ON CONFLICT(email) DO NOTHING`,
-    args: [email],
+    args: [email.toLowerCase()],
   });
 }
 
@@ -45,7 +45,7 @@ export async function hasPurchased(
 ): Promise<boolean> {
   const result = await db.execute({
     sql: `SELECT id FROM purchases WHERE customer_email = ? AND exploration_id = ?`,
-    args: [customerEmail, explorationId],
+    args: [customerEmail.toLowerCase(), explorationId],
   });
   return result.rows.length > 0;
 }
@@ -76,18 +76,19 @@ export async function findOrCreateSession(
   customerEmail: string,
   explorationId: string
 ): Promise<number> {
+  const email = customerEmail.toLowerCase();
   // Return existing in-progress session if one exists
   const existing = await db.execute({
     sql: `SELECT id FROM sessions
           WHERE customer_email = ? AND exploration_id = ? AND status = 'in_progress'
           ORDER BY started_at DESC LIMIT 1`,
-    args: [customerEmail, explorationId],
+    args: [email, explorationId],
   });
   if (existing.rows.length > 0) return existing.rows[0].id as number;
 
   const result = await db.execute({
     sql: `INSERT INTO sessions (customer_email, exploration_id) VALUES (?, ?)`,
-    args: [customerEmail, explorationId],
+    args: [email, explorationId],
   });
   return Number(result.lastInsertRowid);
 }

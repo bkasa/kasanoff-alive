@@ -8,7 +8,8 @@ import { hasPurchased, findOrCreateSession } from '@/lib/queries';
 // after being redirected back from Stripe (no session_id available)
 export async function POST(request: NextRequest) {
   try {
-    const { email, explorationId } = await request.json();
+    const { email: rawEmail, explorationId } = await request.json();
+    const email = rawEmail?.toLowerCase();
 
     if (!email || !explorationId) {
       return Response.json({ error: 'Missing email or explorationId' }, { status: 400 });
