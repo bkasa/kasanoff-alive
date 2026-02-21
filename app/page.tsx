@@ -25,7 +25,7 @@ const EXPLORATIONS: Exploration[] = [
     title: 'What Is My Ikigai?',
     description:
       'A deep, guided interview — approximately 60–70 questions — that maps the intersection of what you love, what the world needs, what you\'re good at, and what you can be paid for. Produces your Ikigai statement, values compass, and questions to sit with.',
-    stripeUrl: 'https://buy.stripe.com/test_28E3cu7r59JS0evfN92ZO00',
+    stripeUrl: 'https://buy.stripe.com/fZu00ifXB7BK4uLfN92ZO02',
     path: '/ikigai',
   },
   {
