@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 const EXPLORATION_ID = 'ikigai';
@@ -23,7 +23,7 @@ interface Message {
 
 type Phase = 'loading' | 'claim' | 'magic-link-sent' | 'chat';
 
-export default function IkigaiPage() {
+function IkigaiPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -593,5 +593,13 @@ function BackgroundWash() {
         />
       ))}
     </div>
+  );
+}
+
+export default function IkigaiPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#FDF8F0' }} />}>
+      <IkigaiPageInner />
+    </Suspense>
   );
 }
