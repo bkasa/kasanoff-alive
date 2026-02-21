@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const email = session.customer_details?.email;
-    // explorationId is stored in metadata set on the Payment Link
-    const explorationId = session.metadata?.exploration_id;
+    // Default to 'ikigai' since that's the only active exploration
+    const explorationId = session.metadata?.exploration_id || 'ikigai';
 
-    if (email && explorationId) {
+    if (email) {
       await upsertCustomer(email);
       await recordPurchase(email, explorationId, session.id);
     }
