@@ -33,7 +33,7 @@ const EXPLORATIONS: Exploration[] = [
     title: 'Tell Your Story Better',
     description:
       'An AI ghostwriter that interviews you and then uses your words to produce top-quality, genuine copy for your LinkedIn, website, and other uses. Produces a short bio, long bio, LinkedIn headline, LinkedIn About section, and a casual About Me.',
-    stripeUrl: null,
+    stripeUrl: 'https://buy.stripe.com/aFa28qeTx2hqbXd9oL2ZO03',
     path: '/tell-your-story',
   },
   {
