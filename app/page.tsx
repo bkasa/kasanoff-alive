@@ -29,6 +29,14 @@ const EXPLORATIONS: Exploration[] = [
     path: '/ikigai',
   },
   {
+    id: 'tell-your-story',
+    title: 'Tell Your Story Better',
+    description:
+      'An AI ghostwriter that interviews you and then uses your words to produce top-quality, genuine copy for your LinkedIn, website, and other uses. Produces a short bio, long bio, LinkedIn headline, LinkedIn About section, and a casual About Me.',
+    stripeUrl: null,
+    path: '/tell-your-story',
+  },
+  {
     id: 'climbing',
     title: 'Am I Climbing the Right Mountain?',
     description:
