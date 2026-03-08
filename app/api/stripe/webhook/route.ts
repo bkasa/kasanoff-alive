@@ -31,15 +31,36 @@ export async function POST(request: NextRequest) {
       session.customer_email ||
       session.receipt_email ||
       null;
-    // Default to 'ikigai' since that's the only active exploration
-    const explorationId = session.metadata?.exploration_id || 'ikigai';
+
+    // Prefer exploration_id from session metadata (set on the payment link).
+    // If absent, expand line_items to read it from the product metadata.
+    let explorationId: string | null = session.metadata?.exploration_id || null;
+
+    if (!explorationId) {
+      try {
+        const full = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ['line_items.data.price.product'],
+        });
+        const product = full.line_items?.data?.[0]?.price?.product;
+        if (product && typeof product !== 'string') {
+          explorationId = (product as Stripe.Product).metadata?.exploration_id || null;
+        }
+      } catch (err) {
+        console.error('Failed to expand line items for session', session.id, err);
+      }
+    }
 
     console.log('Webhook received. Email:', email, 'ExplorationId:', explorationId);
+
+    if (!explorationId) {
+      console.error('No exploration_id found for session', session.id, '— purchase not recorded');
+      return new Response('ok', { status: 200 });
+    }
 
     if (email) {
       await upsertCustomer(email);
       await recordPurchase(email, explorationId, session.id);
-      console.log('Purchase recorded for:', email);
+      console.log('Purchase recorded for:', email, 'exploration:', explorationId);
     } else {
       console.error('No email found in webhook payload:', JSON.stringify(session));
     }
