@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { checkAccess } from '@/lib/exploration-access';
 import { saveMessage, getSessionMessages, touchSession } from '@/lib/queries';
-import { TEMPLATE_PROMPT } from '@/lib/prompts/TEMPLATE_SLUG';
+import { TEMPLATE_PROMPT } from '@/lib/prompts/_template';
 
 const EXPLORATION_ID = 'TEMPLATE_SLUG';
 const ANCHOR_COUNT = 6;
