@@ -6,6 +6,49 @@ A Next.js platform (App Router, TypeScript) hosting AI-guided self-discovery too
 
 ---
 
+## Exploration Spec Format
+
+Bruce will provide specs in this format. Read every field carefully before writing any code.
+
+```
+SLUG: kebab-case-name
+TITLE: Display Name
+DESCRIPTION: One sentence shown on the site and used in metadata
+OPENING QUESTION: The exact first question the guide asks
+TONE: How the guide should sound
+ARC: The journey the conversation takes, step by step
+APPROACH: Specific guidance on how to handle this topic
+TYPE: conversation | document-generator
+```
+
+If TYPE is not specified, default to `conversation`.
+
+---
+
+## Exploration Types
+
+### Type 1: `conversation`
+A reflective dialogue that ends with insight. No documents produced.
+Examples: Ikigai Discovery, Shadow Work, Life Chapter.
+→ Use the standard `_template` as-is.
+
+### Type 2: `document-generator`
+An interview that produces real written deliverables (bios, LinkedIn copy, etc.).
+Examples: Tell Your Story Better.
+→ Requires a custom page.tsx with a two-panel layout and document output area.
+→ Requires higher `max_tokens` (2048 or more per response).
+→ Must include a "Copy" button for each document produced.
+→ Must save all generated documents to the DB so the user can return and access them.
+→ The system prompt must explicitly instruct Claude to:
+   1. Interview first, write later
+   2. Signal clearly when it is producing a document (e.g. wrap in `[DOCUMENT: Title]...[/DOCUMENT]`)
+   3. Seek feedback and offer revisions
+   4. Confirm when all requested documents are complete
+
+For document-generator explorations, the page.tsx should parse `[DOCUMENT: Title]...[/DOCUMENT]` tags out of assistant responses and render them in a separate "Documents" panel on the right side of the screen, with a copy button under each one.
+
+---
+
 ## How to Build a New Exploration
 
 When asked to build a new exploration, follow these steps in order. Do not skip any.
@@ -36,14 +79,23 @@ These appear in:
 - `lib/prompts/SLUG.ts` (1 place — the const name, and the prompt content)
 
 ### Step 4 — Write the system prompt
-Open `lib/prompts/SLUG.ts` and write a real, thoughtful system prompt for this exploration. The prompt should:
-- Open by welcoming the person warmly and asking the first question
-- Guide a deep, reflective conversation (10-20 exchanges)
-- Stay in the voice of a wise, warm, unhurried guide
-- Be specific to this exploration's theme — not generic
-- End naturally when the exploration feels complete, offering a closing reflection
+Open `lib/prompts/SLUG.ts` and write a real, thoughtful system prompt using the TONE, ARC, OPENING QUESTION, and APPROACH from the spec.
 
-Study `lib/prompts/ikigai.ts` as a reference for tone and structure.
+**For `conversation` type:**
+- Open by welcoming the person warmly and asking the opening question from the spec
+- Guide a deep, reflective conversation (10-20 exchanges)
+- Stay in the voice specified in TONE — never generic
+- Follow the ARC precisely
+- End naturally when the exploration feels complete, offering a closing reflection
+- Study `lib/prompts/ikigai.ts` as a reference for structure
+
+**For `document-generator` type:**
+- Interview thoroughly before producing any document
+- Follow the ARC to move from discovery → document selection → writing → feedback → revision
+- Wrap every produced document in `[DOCUMENT: Title]...[/DOCUMENT]` tags so the UI can parse them
+- After producing documents, always ask: "Does this feel like you? What would you change?"
+- Confirm explicitly when all requested documents are complete
+- Use max_tokens: 2048 in the API call for this type
 
 ### Step 5 — Create the Stripe product
 ```bash
@@ -82,10 +134,27 @@ vercel ls
 ```
 
 ### Step 8 — Report back
-Tell Bruce:
-- The live URL (e.g. `https://explore.kasanoff.ai/SLUG`)
-- The Stripe price ID (he'll need it if setting up a payment link manually)
-- Any env vars he needs to add in Vercel dashboard (if any new ones were required)
+Tell Bruce everything he needs to finish the launch. Provide this as a checklist:
+
+**Done automatically:**
+- ✅ Code written and deployed to `https://explore.kasanoff.ai/SLUG`
+- ✅ Stripe product + price created
+
+**Bruce does manually (takes ~5 minutes):**
+
+1. **Stripe Payment Link** — go to dashboard.stripe.com/payment-links → Create link
+   - Price: [PRICE_ID]
+   - Success URL: `https://explore.kasanoff.ai/SLUG?payment=success`
+
+2. **Squarespace page** — add a new page on kasanoff.ai for this exploration
+   - Headline: [TITLE]
+   - Subhead: [DESCRIPTION]
+   - Body: [Write 2-3 sentences expanding on what the user will experience and walk away with]
+   - Price: $18
+   - Button text: Begin Exploration →
+   - Button URL: [the Stripe Payment Link from step 1]
+
+3. **Any new Vercel env vars** (list here if any were added, otherwise say "none")
 
 ---
 
