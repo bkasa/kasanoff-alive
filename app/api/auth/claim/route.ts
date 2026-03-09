@@ -22,8 +22,9 @@ export async function POST(request: NextRequest) {
 
     const sessionId = await findOrCreateSession(email, explorationId);
 
-    // Set session cookie
+    // Clear any stale session, then write a fresh one
     const session = await getIronSession<SessionData>(cookies(), sessionOptions);
+    session.destroy();
     session.customerEmail = email;
     await session.save();
 
