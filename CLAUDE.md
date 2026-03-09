@@ -145,6 +145,8 @@ Tell Bruce everything he needs to finish the launch. Provide this as a checklist
 1. **Stripe Payment Link** — go to dashboard.stripe.com/payment-links → Create link
    - Price: [PRICE_ID]
    - Success URL: `https://explore.kasanoff.ai/SLUG?payment=success`
+   - ⚠️ CRITICAL: After creating the link, click into it → Edit → Metadata → Add: `exploration_id` = `SLUG`
+   - Without this metadata, purchases will not be recorded and customers will be locked out
 
 2. **Squarespace page** — add a new page on kasanoff.ai for this exploration
    - Headline: [TITLE]
@@ -219,4 +221,11 @@ The UI (`app/SLUG/page.tsx`) is a single-file React component handling four phas
 - All explorations are `noindex, nofollow` in metadata
 - Price is always $18 (1800 cents)
 - Model is always `claude-sonnet-4-6`
-- Max tokens per response: 1024
+- Max tokens per response: 1024 (2048 for document-generator type)
+
+## Known Issues & Lessons Learned
+
+- **Stripe Payment Link metadata is critical**: The webhook identifies which exploration was purchased via `exploration_id` in the payment link metadata. If this is missing, purchases are not recorded and customers are locked out. Always add `exploration_id` = `SLUG` to every payment link after creating it.
+- **The Stripe CLI cannot update payment links**: The restricted API key does not have permission for this endpoint. Payment link metadata must be set manually in the Stripe dashboard.
+- **The template file import**: `app/api/_template/chat/route.ts` imports from `@/lib/prompts/_template` — do not change this to `TEMPLATE_SLUG` or the build will fail.
+- **node_modules must never be committed**: The `.gitignore` includes `node_modules/`. Never run `git add` without verifying this is excluded.
