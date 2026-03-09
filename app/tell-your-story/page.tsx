@@ -274,14 +274,15 @@ function TellYourStoryInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Hello, I am ready to begin.' }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text) {
-          setMessages([{ role: 'assistant', content: data.text }]);
-        }
+      if (!res.ok) {
+        throw new Error(`Chat API returned ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.text) {
+        setMessages([{ role: 'assistant', content: data.text }]);
       }
     } catch {
-      setErrorMessage('Something went wrong loading the conversation.');
+      setErrorMessage('Something went wrong starting the conversation. Please refresh to try again.');
     } finally {
       setIsLoading(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
@@ -715,7 +716,7 @@ function TellYourStoryInner() {
             margin: 0,
           }}
         >
-          An AI ghostwriter, interviewing you
+          An AI ghostwriter that interviews you and produces genuine copy for your LinkedIn, website, and more
         </p>
       </div>
 
