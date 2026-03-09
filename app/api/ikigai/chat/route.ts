@@ -20,6 +20,20 @@ function buildContextWindow(messages: Message[]): Message[] {
   return [...anchor, bridge, ...recent];
 }
 
+export async function GET() {
+  try {
+    const access = await checkAccess(EXPLORATION_ID);
+    if (!access.allowed || !access.sessionId) {
+      return Response.json({ messages: [] });
+    }
+    const messages = await getSessionMessages(access.sessionId);
+    return Response.json({ messages });
+  } catch (error) {
+    console.error('Ikigai GET error:', error);
+    return Response.json({ messages: [] });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const access = await checkAccess(EXPLORATION_ID);

@@ -99,16 +99,34 @@ function IkigaiPageInner() {
     setPhase('chat');
     setIsLoading(true);
     try {
+      // Check for existing conversation history first
+      const historyRes = await fetch('/api/ikigai/chat');
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        const existing: Message[] = historyData.messages || [];
+        // Filter out the internal opener trigger so it never shows in the UI
+        const displayMessages = existing.filter(
+          (m) => !(m.role === 'user' && m.content === 'Hello, I am ready to begin.')
+        );
+        if (displayMessages.length > 0) {
+          // Returning user — restore their conversation, don't send a new opener
+          setMessages(displayMessages);
+          setIsLoading(false);
+          setTimeout(() => textareaRef.current?.focus(), 100);
+          return;
+        }
+      }
+
+      // New user — send opener to get the first response
       const res = await fetch('/api/ikigai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Hello, I am ready to begin.' }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text) {
-          setMessages([{ role: 'assistant', content: data.text }]);
-        }
+      if (!res.ok) throw new Error(`Chat API returned ${res.status}`);
+      const data = await res.json();
+      if (data.text) {
+        setMessages([{ role: 'assistant', content: data.text }]);
       }
     } catch {
       setErrorMessage('Something went wrong loading the conversation.');

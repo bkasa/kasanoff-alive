@@ -84,7 +84,7 @@ export async function findOrCreateSession(
           ORDER BY started_at DESC LIMIT 1`,
     args: [email, explorationId],
   });
-  if (existing.rows.length > 0) return existing.rows[0].id as number;
+  if (existing.rows.length > 0) return Number(existing.rows[0].id);
 
   const result = await db.execute({
     sql: `INSERT INTO sessions (customer_email, exploration_id) VALUES (?, ?)`,
