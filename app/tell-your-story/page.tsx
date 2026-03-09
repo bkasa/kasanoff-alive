@@ -274,6 +274,11 @@ function TellYourStoryInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Hello, I am ready to begin.' }),
       });
+      if (res.status === 401) {
+        // Session cookie invalid or expired — redirect to re-claim
+        setPhase('claim');
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Chat API returned ${res.status}`);
       }

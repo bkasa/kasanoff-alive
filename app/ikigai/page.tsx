@@ -123,6 +123,10 @@ function IkigaiPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Hello, I am ready to begin.' }),
       });
+      if (res.status === 401) {
+        setPhase('claim');
+        return;
+      }
       if (!res.ok) throw new Error(`Chat API returned ${res.status}`);
       const data = await res.json();
       if (data.text) {
