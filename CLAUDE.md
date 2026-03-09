@@ -201,7 +201,14 @@ const C = {
 
 ## Conversation Architecture
 
-Each exploration has its own chat API route at `app/api/SLUG/chat/route.ts`. This route:
+Each exploration has its own chat API route at `app/api/SLUG/chat/route.ts`. This route must implement BOTH handlers:
+
+**GET handler** — returns existing message history for returning users:
+1. Checks access via `checkAccess(EXPLORATION_ID)`
+2. Calls `getSessionMessages(sessionId)` and returns `{ messages }`
+3. Returns `{ messages: [] }` on any error (never a 401 — just empty)
+
+**POST handler** — handles a new message:
 1. Checks access via `checkAccess(EXPLORATION_ID)`
 2. Saves the user message
 3. Loads full history, trims to context window (6 anchor + 40 recent)
@@ -209,6 +216,14 @@ Each exploration has its own chat API route at `app/api/SLUG/chat/route.ts`. Thi
 5. Saves and returns the assistant response
 
 The UI (`app/SLUG/page.tsx`) is a single-file React component handling four phases: `loading → claim → magic-link-sent → chat`.
+
+**Critical — session restoration for returning users:**
+The `startConversation()` function must:
+1. First GET existing history from `/api/SLUG/chat`
+2. If messages exist → restore them to the UI and return (do NOT send the opener)
+3. If no messages → send `Hello, I am ready to begin.` to get the first AI response
+
+Skipping step 1 causes returning users to see a new conversation instead of their history, and causes the AI to respond with a closing/summary message when it receives the opener in the context of a near-complete conversation.
 
 ---
 
