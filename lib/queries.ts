@@ -72,19 +72,6 @@ export async function getDailyTotals() {
 
 // ─── Sessions (conversations) ─────────────────────────────────
 
-export async function hasActiveSession(
-  customerEmail: string,
-  explorationId: string
-): Promise<boolean> {
-  const result = await db.execute({
-    sql: `SELECT id FROM sessions
-          WHERE customer_email = ? AND exploration_id = ? AND status = 'in_progress'
-          LIMIT 1`,
-    args: [customerEmail.toLowerCase(), explorationId],
-  });
-  return result.rows.length > 0;
-}
-
 export async function findOrCreateSession(
   customerEmail: string,
   explorationId: string
