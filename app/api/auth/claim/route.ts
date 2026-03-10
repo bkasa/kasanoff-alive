@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { SessionData, sessionOptions } from '@/lib/session';
-import { hasPurchased, findOrCreateSession } from '@/lib/queries';
+import { hasPurchased, hasActiveSession, findOrCreateSession } from '@/lib/queries';
 
 // Called when a returning customer enters their email to claim access
 // after being redirected back from Stripe (no session_id available)
@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'No purchase found for this email' }, { status: 404 });
     }
 
+    const alreadyHasAccess = await hasActiveSession(email, explorationId);
     const sessionId = await findOrCreateSession(email, explorationId);
 
     // Clear any stale session, then write a fresh one
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     session.customerEmail = email;
     await session.save();
 
-    return Response.json({ ok: true, sessionId });
+    return Response.json({ ok: true, sessionId, alreadyHasAccess });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error('Claim access error:', msg);

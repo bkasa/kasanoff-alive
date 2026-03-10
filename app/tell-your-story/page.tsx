@@ -306,6 +306,10 @@ function TellYourStoryInner() {
       });
       const data = await res.json();
       if (data.ok) {
+        if (data.alreadyHasAccess) {
+          await loadOrStartConversation();
+          return;
+        }
         window.location.href = '/tell-your-story';
         return;
       } else {

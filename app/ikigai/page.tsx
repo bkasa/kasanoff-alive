@@ -152,7 +152,10 @@ function IkigaiPageInner() {
       });
       const data = await res.json();
       if (data.ok) {
-        // Reload so the session cookie is fully available before chat starts
+        if (data.alreadyHasAccess) {
+          await startConversation();
+          return;
+        }
         window.location.href = '/ikigai';
         return;
       } else {
