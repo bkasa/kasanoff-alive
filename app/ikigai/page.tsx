@@ -323,6 +323,19 @@ function IkigaiPageInner() {
           >
             {justPurchased ? 'Thank you for your purchase' : 'Access your Ikigai'}
           </h2>
+          {justPurchased && (
+            <p
+              style={{
+                fontFamily: "'Source Sans 3', sans-serif",
+                fontSize: '14px',
+                color: C.gold,
+                margin: '0 0 20px',
+                lineHeight: 1.6,
+              }}
+            >
+              Your purchase was successful and you already have access. Please enter your email to go back to your session.
+            </p>
+          )}
           <p
             style={{
               fontFamily: "'Source Sans 3', sans-serif",
@@ -333,7 +346,7 @@ function IkigaiPageInner() {
             }}
           >
             {justPurchased
-              ? 'Enter the email you used at checkout to begin your Ikigai exploration.'
+              ? 'Enter the email you used at checkout.'
               : 'Enter the email you used to purchase this Exploration.'}
           </p>
 

@@ -492,6 +492,19 @@ function TellYourStoryInner() {
           >
             {justPurchased ? 'Thank you for your purchase' : 'Access your Exploration'}
           </h2>
+          {justPurchased && (
+            <p
+              style={{
+                fontFamily: "'Source Sans 3', sans-serif",
+                fontSize: '14px',
+                color: C.gold,
+                margin: '0 0 20px',
+                lineHeight: 1.6,
+              }}
+            >
+              Your purchase was successful and you already have access. Please enter your email to go back to your session.
+            </p>
+          )}
           <p
             style={{
               fontFamily: "'Source Sans 3', sans-serif",
@@ -502,7 +515,7 @@ function TellYourStoryInner() {
             }}
           >
             {justPurchased
-              ? 'Enter the email you used at checkout to begin.'
+              ? 'Enter the email you used at checkout.'
               : 'Enter the email you used to purchase this Exploration.'}
           </p>
 
