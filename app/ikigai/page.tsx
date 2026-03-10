@@ -153,8 +153,20 @@ function IkigaiPageInner() {
       const data = await res.json();
       if (data.ok) {
         if (data.alreadyHasAccess) {
-          await startConversation();
-          return;
+          // Load history directly — keep claim phase until confirmed, never send opener
+          const historyRes = await fetch('/api/ikigai/chat');
+          if (historyRes.ok) {
+            const historyData = await historyRes.json();
+            const display: Message[] = (historyData.messages || []).filter(
+              (m: Message) => !(m.role === 'user' && m.content === 'Hello, I am ready to begin.')
+            );
+            if (display.length > 0) {
+              setMessages(display);
+              setPhase('chat');
+              return;
+            }
+          }
+          // No history found or fetch failed — fall through to redirect
         }
         window.location.href = '/ikigai';
         return;
