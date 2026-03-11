@@ -1,6 +1,14 @@
 import { NextRequest } from 'next/server';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { upsertCustomer, recordPurchase } from '@/lib/queries';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const EXPLORATION_TITLES: Record<string, string> = {
+  'ikigai': 'Ikigai Discovery',
+  'tell-your-story': 'Tell Your Story Better',
+};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -61,6 +69,23 @@ export async function POST(request: NextRequest) {
       await upsertCustomer(email);
       await recordPurchase(email, explorationId, session.id);
       console.log('Purchase recorded for:', email, 'exploration:', explorationId);
+
+      // Send confirmation email
+      const fullName: string = session.customer_details?.name || '';
+      const firstName = fullName.trim().split(/\s+/)[0] || 'there';
+      const explorationTitle = EXPLORATION_TITLES[explorationId] || explorationId;
+
+      try {
+        await resend.emails.send({
+          from: 'bruce@kasanoff.com',
+          to: email,
+          subject: `Your ${explorationTitle} is ready.`,
+          text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nTo access your tool, please go to https://explore.kasanoff.ai/${explorationId} and enter the email you used to place your order. If you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
+        });
+        console.log('Confirmation email sent to:', email);
+      } catch (emailErr) {
+        console.error('Failed to send confirmation email:', emailErr);
+      }
     } else {
       console.error('No email found in webhook payload:', JSON.stringify(session));
     }
