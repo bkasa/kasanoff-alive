@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       try {
         await resend.emails.send({
           from: 'Bruce Kasanoff <bruce@kasanoff.ai>',
-          reply_to: 'bruce@kasanoff.com',
+          replyTo: 'bruce@kasanoff.com',
           to: email,
           subject: `Your ${explorationTitle} is ready.`,
           text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nTo access your tool, please go to https://explore.kasanoff.ai/${explorationId} and enter the email you used to place your order. If you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
