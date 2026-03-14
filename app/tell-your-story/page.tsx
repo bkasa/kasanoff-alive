@@ -177,6 +177,7 @@ function TellYourStoryInner() {
   const [justPurchased, setJustPurchased] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showDocuments, setShowDocuments] = useState(false);
+  const [activeDocIndex, setActiveDocIndex] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -201,7 +202,13 @@ function TellYourStoryInner() {
       }
     });
     const parsed = Array.from(docMap.entries()).map(([title, body]) => ({ title, body }));
-    setDocuments(parsed);
+    setDocuments((prev) => {
+      // When a new document is added, jump to it
+      if (parsed.length > prev.length) {
+        setActiveDocIndex(parsed.length - 1);
+      }
+      return parsed;
+    });
     if (parsed.length > 0) setShowDocuments(true);
   }, [messages]);
 
@@ -947,60 +954,80 @@ function TellYourStoryInner() {
           {/* Panel header */}
           <div
             style={{
-              padding: '20px 24px 16px',
+              padding: '20px 24px 0',
               borderBottom: `1px solid rgba(212,165,116,0.15)`,
               flexShrink: 0,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p
+            <p
+              style={{
+                fontFamily: "'Source Sans 3', sans-serif",
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: C.gold,
+                margin: '0 0 14px',
+              }}
+            >
+              Documents
+              {documents.length > 0 && (
+                <span
+                  style={{
+                    marginLeft: '8px',
+                    background: C.gold,
+                    color: C.warmWhite,
+                    borderRadius: '10px',
+                    padding: '1px 7px',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {documents.length}
+                </span>
+              )}
+            </p>
+
+            {/* Tabs */}
+            {documents.length > 0 && (
+              <div
                 style={{
-                  fontFamily: "'Source Sans 3', sans-serif",
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  color: C.gold,
-                  margin: 0,
+                  display: 'flex',
+                  gap: '2px',
+                  overflowX: 'auto',
+                  paddingBottom: '0',
                 }}
               >
-                Documents
-                {documents.length > 0 && (
-                  <span
+                {documents.map((doc, i) => (
+                  <button
+                    key={doc.title}
+                    onClick={() => { setActiveDocIndex(i); setShowDocuments(true); }}
                     style={{
-                      marginLeft: '8px',
-                      background: C.gold,
-                      color: C.warmWhite,
-                      borderRadius: '10px',
-                      padding: '1px 7px',
-                      fontSize: '10px',
-                      fontWeight: 600,
+                      flexShrink: 0,
+                      padding: '7px 14px',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: i === activeDocIndex && showDocuments
+                        ? `2px solid ${C.gold}`
+                        : '2px solid transparent',
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontSize: '12px',
+                      fontWeight: i === activeDocIndex && showDocuments ? 500 : 400,
+                      color: i === activeDocIndex && showDocuments ? C.charcoal : C.charcoalLight,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '140px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
+                    title={doc.title}
                   >
-                    {documents.length}
-                  </span>
-                )}
-              </p>
-              {documents.length > 0 && (
-                <button
-                  onClick={() => setShowDocuments((v) => !v)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontFamily: "'Source Sans 3', sans-serif",
-                    fontSize: '11px',
-                    color: C.charcoalLight,
-                    cursor: 'pointer',
-                    opacity: 0.6,
-                    padding: '2px 0',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
-                >
-                  {showDocuments ? 'hide' : 'show'}
-                </button>
-              )}
-            </div>
+                    {doc.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Panel body */}
@@ -1026,20 +1053,9 @@ function TellYourStoryInner() {
                 Your documents will appear here as they are created. You can return to this page
                 anytime to access them.
               </p>
-            ) : showDocuments ? (
-              documents.map((doc) => <DocumentCard key={doc.title} doc={doc} />)
-            ) : (
-              <p
-                style={{
-                  fontFamily: "'Source Sans 3', sans-serif",
-                  fontSize: '13px',
-                  color: C.charcoalLight,
-                  opacity: 0.6,
-                }}
-              >
-                {documents.length} document{documents.length > 1 ? 's' : ''} ready.
-              </p>
-            )}
+            ) : showDocuments && documents[activeDocIndex] ? (
+              <DocumentCard key={documents[activeDocIndex].title} doc={documents[activeDocIndex]} />
+            ) : null}
           </div>
         </div>
       </div>
