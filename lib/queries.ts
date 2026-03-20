@@ -70,6 +70,20 @@ export async function getDailyTotals() {
   return result.rows;
 }
 
+export async function getDailyTotalsByExploration() {
+  const result = await db.execute(
+    `SELECT
+       DATE(created_at) as date,
+       exploration_id,
+       COUNT(*) as order_count,
+       SUM(amount_cents) as revenue_cents
+     FROM purchases
+     GROUP BY DATE(created_at), exploration_id
+     ORDER BY date DESC, exploration_id ASC`
+  );
+  return result.rows;
+}
+
 // ─── Sessions (conversations) ─────────────────────────────────
 
 export async function findOrCreateSession(

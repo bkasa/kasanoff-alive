@@ -11,7 +11,7 @@ const C = {
   terracotta: '#C4836A',
 };
 
-type Tab = 'orders' | 'daily' | 'emails';
+type Tab = 'orders' | 'daily' | 'emails' | 'sales';
 
 interface Purchase {
   id: number;
@@ -27,6 +27,13 @@ interface DailyTotal {
   revenue_cents: number;
 }
 
+interface DailyTotalByExploration {
+  date: string;
+  exploration_id: string;
+  order_count: number;
+  revenue_cents: number;
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState('');
@@ -36,8 +43,22 @@ export default function AdminPage() {
 
   const [orders, setOrders] = useState<Purchase[]>([]);
   const [dailyTotals, setDailyTotals] = useState<DailyTotal[]>([]);
+  const [dailyByExploration, setDailyByExploration] = useState<DailyTotalByExploration[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+
+  // Sales Dashboard state
+  const [salesMonth, setSalesMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [salesData, setSalesData] = useState<{
+    month: string;
+    daysInMonth: number;
+    explorations: string[];
+    data: Record<string, Record<number, number>>;
+  } | null>(null);
+  const [salesLoading, setSalesLoading] = useState(false);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +96,7 @@ export default function AdminPage() {
       const emailsData = await emailsRes.json();
       setOrders(ordersData.purchases || []);
       setDailyTotals(dailyData.totals || []);
+      setDailyByExploration(dailyData.byExploration || []);
       setEmails(emailsData.emails || []);
     } catch {
       // silently fail — data will just be empty
@@ -82,6 +104,25 @@ export default function AdminPage() {
       setDataLoading(false);
     }
   }
+
+  async function loadSalesData(month: string) {
+    setSalesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/sales-dashboard?month=${month}`);
+      const json = await res.json();
+      setSalesData(json);
+    } catch {
+      // silently fail
+    } finally {
+      setSalesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (tab === 'sales' && authed) {
+      loadSalesData(salesMonth);
+    }
+  }, [tab, salesMonth, authed]);
 
   function downloadEmailsCSV() {
     const csv = 'email\n' + emails.join('\n');
@@ -215,6 +256,7 @@ export default function AdminPage() {
     { key: 'orders', label: 'Orders' },
     { key: 'daily', label: 'Daily Totals' },
     { key: 'emails', label: 'Customer Emails' },
+    { key: 'sales', label: 'Sales Dashboard' },
   ];
 
   return (
@@ -293,20 +335,35 @@ export default function AdminPage() {
               <thead>
                 <tr>
                   <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Exploration</th>
                   <th style={thStyle}>Orders</th>
                   <th style={thStyle}>Revenue</th>
                 </tr>
               </thead>
               <tbody>
-                {dailyTotals.map((d) => (
-                  <tr key={d.date}>
-                    <td style={tdStyle}>{d.date}</td>
-                    <td style={tdStyle}>{d.order_count}</td>
-                    <td style={tdStyle}>{formatCents(d.revenue_cents)}</td>
-                  </tr>
-                ))}
+                {dailyTotals.map((d) => {
+                  const rows = dailyByExploration.filter((r) => r.date === d.date);
+                  return (
+                    <>
+                      {rows.map((r) => (
+                        <tr key={`${d.date}-${r.exploration_id}`}>
+                          <td style={{ ...tdStyle, color: C.charcoalLight, fontSize: '13px' }}>{r.date}</td>
+                          <td style={{ ...tdStyle, color: C.charcoalLight, fontSize: '13px', paddingLeft: '24px' }}>{r.exploration_id}</td>
+                          <td style={{ ...tdStyle, color: C.charcoalLight, fontSize: '13px' }}>{Number(r.order_count)}</td>
+                          <td style={{ ...tdStyle, color: C.charcoalLight, fontSize: '13px' }}>{formatCents(Number(r.revenue_cents))}</td>
+                        </tr>
+                      ))}
+                      <tr key={d.date}>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{d.date}</td>
+                        <td style={{ ...tdStyle, fontWeight: 500, fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: C.charcoalLight }}>Total</td>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{Number(d.order_count)}</td>
+                        <td style={{ ...tdStyle, fontWeight: 500 }}>{formatCents(Number(d.revenue_cents))}</td>
+                      </tr>
+                    </>
+                  );
+                })}
                 {dailyTotals.length === 0 && (
-                  <tr><td colSpan={3} style={{ ...tdStyle, color: C.charcoalLight }}>No data yet.</td></tr>
+                  <tr><td colSpan={4} style={{ ...tdStyle, color: C.charcoalLight }}>No data yet.</td></tr>
                 )}
               </tbody>
             </table>
@@ -356,6 +413,207 @@ export default function AdminPage() {
                 emails.map((email, i) => <div key={i}>{email}</div>)
               )}
             </div>
+          </div>
+        )}
+        {/* Sales Dashboard Tab */}
+        {tab === 'sales' && (
+          <div>
+            {/* Month navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+              <button
+                onClick={() => {
+                  const [y, m] = salesMonth.split('-').map(Number);
+                  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+                  setSalesMonth(prev);
+                }}
+                style={{
+                  padding: '6px 14px', background: 'none', border: `1px solid rgba(212,165,116,0.4)`,
+                  borderRadius: '6px', fontFamily: "'Source Sans 3', sans-serif", fontSize: '13px',
+                  color: C.charcoalLight, cursor: 'pointer',
+                }}
+              >
+                ← Prev
+              </button>
+              <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '18px', color: C.charcoal }}>
+                {salesMonth
+                  ? new Date(`${salesMonth}-15`).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+                  : ''}
+              </span>
+              <button
+                onClick={() => {
+                  const [y, m] = salesMonth.split('-').map(Number);
+                  const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+                  setSalesMonth(next);
+                }}
+                style={{
+                  padding: '6px 14px', background: 'none', border: `1px solid rgba(212,165,116,0.4)`,
+                  borderRadius: '6px', fontFamily: "'Source Sans 3', sans-serif", fontSize: '13px',
+                  color: C.charcoalLight, cursor: 'pointer',
+                }}
+              >
+                Next →
+              </button>
+            </div>
+
+            {salesLoading && (
+              <p style={{ color: C.charcoalLight, fontSize: '14px' }}>Loading…</p>
+            )}
+
+            {!salesLoading && salesData && (() => {
+              const { daysInMonth, explorations, data } = salesData;
+              const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+              // Units grid
+              const unitsDailyTotals: Record<number, number> = {};
+              for (const d of days) {
+                unitsDailyTotals[d] = explorations.reduce((sum, exp) => sum + (data[exp]?.[d] ?? 0), 0);
+              }
+              const unitsMtdByExp: Record<string, number> = {};
+              for (const exp of explorations) {
+                unitsMtdByExp[exp] = days.reduce((sum, d) => sum + (data[exp]?.[d] ?? 0), 0);
+              }
+              const unitsMtdTotal = explorations.reduce((sum, exp) => sum + unitsMtdByExp[exp], 0);
+
+              const gridTableStyle: React.CSSProperties = {
+                width: '100%', borderCollapse: 'collapse', fontSize: '12px',
+                color: C.charcoal, marginBottom: '40px',
+              };
+              const gridThStyle: React.CSSProperties = {
+                padding: '6px 8px', fontWeight: 500, fontSize: '10px',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: C.charcoalLight, borderBottom: `1px solid rgba(212,165,116,0.2)`,
+                textAlign: 'center', whiteSpace: 'nowrap',
+              };
+              const gridTdStyle: React.CSSProperties = {
+                padding: '6px 8px', borderBottom: `1px solid rgba(61,50,41,0.05)`,
+                textAlign: 'center', fontFamily: "'Source Sans 3', sans-serif",
+              };
+              const gridTdZero: React.CSSProperties = { ...gridTdStyle, color: 'rgba(107,93,80,0.3)' };
+              const labelTdStyle: React.CSSProperties = {
+                ...gridTdStyle, textAlign: 'left', fontWeight: 500, whiteSpace: 'nowrap',
+                paddingRight: '16px',
+              };
+              const totalColStyle: React.CSSProperties = {
+                ...gridTdStyle, fontWeight: 600,
+                borderLeft: `1px solid rgba(212,165,116,0.2)`,
+              };
+              const totalRowStyle: React.CSSProperties = {
+                ...gridTdStyle, fontWeight: 600,
+                borderTop: `1px solid rgba(212,165,116,0.2)`,
+                background: 'rgba(253,248,240,0.6)',
+              };
+
+              return (
+                <>
+                  {/* Units section */}
+                  <h3 style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '16px',
+                    fontWeight: 400, color: C.charcoal, margin: '0 0 12px',
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                  }}>
+                    Units
+                  </h3>
+                  <div style={{ overflowX: 'auto', marginBottom: '40px' }}>
+                    <table style={gridTableStyle}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...gridThStyle, textAlign: 'left' }}>Exploration</th>
+                          {days.map(d => <th key={d} style={gridThStyle}>{d}</th>)}
+                          <th style={{ ...gridThStyle, borderLeft: `1px solid rgba(212,165,116,0.2)` }}>MTD</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {explorations.map(exp => (
+                          <tr key={exp}>
+                            <td style={labelTdStyle}>{exp}</td>
+                            {days.map(d => {
+                              const v = data[exp]?.[d] ?? 0;
+                              return <td key={d} style={v === 0 ? gridTdZero : gridTdStyle}>{v === 0 ? '–' : v}</td>;
+                            })}
+                            <td style={totalColStyle}>{unitsMtdByExp[exp]}</td>
+                          </tr>
+                        ))}
+                        {explorations.length === 0 && (
+                          <tr>
+                            <td colSpan={days.length + 2} style={{ ...gridTdStyle, color: C.charcoalLight }}>
+                              No purchases this month.
+                            </td>
+                          </tr>
+                        )}
+                        {explorations.length > 0 && (
+                          <tr>
+                            <td style={{ ...labelTdStyle, ...totalRowStyle, textAlign: 'left' }}>Daily Total</td>
+                            {days.map(d => (
+                              <td key={d} style={unitsDailyTotals[d] === 0
+                                ? { ...gridTdZero, ...totalRowStyle }
+                                : totalRowStyle}>
+                                {unitsDailyTotals[d] === 0 ? '–' : unitsDailyTotals[d]}
+                              </td>
+                            ))}
+                            <td style={{ ...totalColStyle, ...totalRowStyle }}>{unitsMtdTotal}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Revenue section */}
+                  <h3 style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '16px',
+                    fontWeight: 400, color: C.charcoal, margin: '0 0 12px',
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                  }}>
+                    Revenue
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={gridTableStyle}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...gridThStyle, textAlign: 'left' }}>Exploration</th>
+                          {days.map(d => <th key={d} style={gridThStyle}>{d}</th>)}
+                          <th style={{ ...gridThStyle, borderLeft: `1px solid rgba(212,165,116,0.2)` }}>MTD</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {explorations.map(exp => (
+                          <tr key={exp}>
+                            <td style={labelTdStyle}>{exp}</td>
+                            {days.map(d => {
+                              const v = data[exp]?.[d] ?? 0;
+                              const rev = v * 18;
+                              return <td key={d} style={v === 0 ? gridTdZero : gridTdStyle}>
+                                {v === 0 ? '–' : `$${rev}`}
+                              </td>;
+                            })}
+                            <td style={totalColStyle}>${unitsMtdByExp[exp] * 18}</td>
+                          </tr>
+                        ))}
+                        {explorations.length === 0 && (
+                          <tr>
+                            <td colSpan={days.length + 2} style={{ ...gridTdStyle, color: C.charcoalLight }}>
+                              No purchases this month.
+                            </td>
+                          </tr>
+                        )}
+                        {explorations.length > 0 && (
+                          <tr>
+                            <td style={{ ...labelTdStyle, ...totalRowStyle, textAlign: 'left' }}>Daily Total</td>
+                            {days.map(d => (
+                              <td key={d} style={unitsDailyTotals[d] === 0
+                                ? { ...gridTdZero, ...totalRowStyle }
+                                : totalRowStyle}>
+                                {unitsDailyTotals[d] === 0 ? '–' : `$${unitsDailyTotals[d] * 18}`}
+                              </td>
+                            ))}
+                            <td style={{ ...totalColStyle, ...totalRowStyle }}>${unitsMtdTotal * 18}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
