@@ -3,6 +3,8 @@ import { checkAccess } from '@/lib/exploration-access';
 import { saveMessage, getSessionMessages, touchSession } from '@/lib/queries';
 import { TELL_YOUR_STORY_PROMPT } from '@/lib/prompts/tell-your-story';
 
+export const maxDuration = 60;
+
 const EXPLORATION_ID = 'tell-your-story';
 const ANCHOR_COUNT = 6;
 const RECENT_COUNT = 40;

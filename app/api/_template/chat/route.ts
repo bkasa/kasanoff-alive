@@ -3,6 +3,8 @@ import { checkAccess } from '@/lib/exploration-access';
 import { saveMessage, getSessionMessages, touchSession } from '@/lib/queries';
 import { TEMPLATE_PROMPT } from '@/lib/prompts/_template';
 
+export const maxDuration = 60;
+
 const EXPLORATION_ID = 'TEMPLATE_SLUG';
 const ANCHOR_COUNT = 6;
 const RECENT_COUNT = 40;

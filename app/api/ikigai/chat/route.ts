@@ -3,6 +3,8 @@ import { checkAccess } from '@/lib/exploration-access';
 import { saveMessage, getSessionMessages, touchSession } from '@/lib/queries';
 import { IKIGAI_PROMPT } from '@/lib/prompts/ikigai';
 
+export const maxDuration = 60;
+
 const EXPLORATION_ID = 'ikigai';
 const ANCHOR_COUNT = 6;
 const RECENT_COUNT = 40;
