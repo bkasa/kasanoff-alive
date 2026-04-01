@@ -22,6 +22,36 @@ function buildContextWindow(messages: Message[]): Message[] {
   return [...anchor, bridge, ...recent];
 }
 
+async function callAnthropicWithRetry(
+  body: string,
+  maxAttempts = 3
+): Promise<{ content: { text: string }[] }> {
+  let lastError: Error = new Error('Anthropic API failed after retries');
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01',
+      },
+      body,
+    });
+    const data = await response.json();
+    if (response.ok) return data;
+    console.error(`Anthropic API error (attempt ${attempt + 1}):`, JSON.stringify(data));
+    if (response.status === 529 || response.status >= 500) {
+      lastError = new Error(`Anthropic error: ${response.status}`);
+      continue;
+    }
+    throw new Error(`Anthropic error: ${response.status}`);
+  }
+  throw lastError;
+}
+
 export async function GET() {
   try {
     const access = await checkAccess(EXPLORATION_ID);
@@ -58,28 +88,14 @@ export async function POST(request: NextRequest) {
     const allMessages = await getSessionMessages(sessionId);
     const contextMessages = buildContextWindow(allMessages);
 
-    // Call Anthropic directly (avoids HTTP round-trip to /api/chat)
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
+    const data = await callAnthropicWithRetry(
+      JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         system: IKIGAI_PROMPT,
         messages: contextMessages,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Anthropic API error:', JSON.stringify(data));
-      throw new Error(`Anthropic error: ${response.status}`);
-    }
+      })
+    );
 
     const text = data.content[0]?.text || '';
 
