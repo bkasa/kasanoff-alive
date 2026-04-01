@@ -37,6 +37,14 @@ const EXPLORATIONS: Exploration[] = [
     path: '/tell-your-story',
   },
   {
+    id: 'better-decision',
+    title: 'Better Decision',
+    description:
+      'A guided conversation with an AI advisor that helps you move from confusion to clarity — and from clarity to commitment. Produces a one-page decision document written in your voice.',
+    stripeUrl: null,
+    path: '/better-decision',
+  },
+  {
     id: 'climbing',
     title: 'Am I Climbing the Right Mountain?',
     description:
