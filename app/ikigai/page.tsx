@@ -399,14 +399,14 @@ function IkigaiPageInner() {
               onMouseEnter={(e) => { if (!claimSending) (e.currentTarget.style.background = C.terracotta); }}
               onMouseLeave={(e) => { if (!claimSending) (e.currentTarget.style.background = C.gold); }}
             >
-              {claimSending ? 'Checking…' : 'Begin Exploration'}
+              {claimSending ? 'Checking…' : 'Begin'}
             </button>
           </form>
 
           <p style={{ marginTop: '28px', fontFamily: "'Source Sans 3', sans-serif", fontSize: '12px', color: C.charcoalLight }}>
             Haven&apos;t purchased yet?{' '}
-            <a href="/" style={{ color: C.gold, textDecoration: 'none' }}>
-              See all Explorations →
+            <a href="https://kasanoff.ai" style={{ color: C.gold, textDecoration: 'none' }}>
+              See all Guides →
             </a>
           </p>
         </div>
@@ -471,7 +471,7 @@ function IkigaiPageInner() {
       {/* Header */}
       <div style={{ padding: 'clamp(60px,8vw,80px) clamp(20px,5vw,40px) 0', textAlign: 'center', flexShrink: 0, position: 'relative', zIndex: 1 }}>
         <p style={{ fontFamily: "'Source Sans 3', sans-serif", fontSize: '11px', fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.gold, margin: '0 0 10px' }}>
-          Explorations
+          Kasanoff.ai Guide
         </p>
         <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 'clamp(26px, 5vw, 36px)', fontWeight: 300, color: C.charcoal, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
           Ikigai Discovery

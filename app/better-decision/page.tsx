@@ -495,7 +495,7 @@ function BetterDecisionInner() {
               margin: '0 0 12px',
             }}
           >
-            {justPurchased ? 'Thank you for your purchase' : 'Access your Exploration'}
+            {justPurchased ? 'Thank you for your purchase' : 'Access your Kasanoff.ai Guide'}
           </h2>
           {justPurchased && (
             <p
@@ -584,7 +584,7 @@ function BetterDecisionInner() {
                 if (!claimSending) (e.currentTarget.style.background = C.gold);
               }}
             >
-              {claimSending ? 'Checking…' : 'Begin Exploration'}
+              {claimSending ? 'Checking…' : 'Begin'}
             </button>
           </form>
 
@@ -597,8 +597,8 @@ function BetterDecisionInner() {
             }}
           >
             Haven&apos;t purchased yet?{' '}
-            <a href="/" style={{ color: C.gold, textDecoration: 'none' }}>
-              See all Explorations →
+            <a href="https://kasanoff.ai" style={{ color: C.gold, textDecoration: 'none' }}>
+              See all Guides →
             </a>
           </p>
         </div>
@@ -717,7 +717,7 @@ function BetterDecisionInner() {
             margin: '0 0 8px',
           }}
         >
-          Explorations
+          Kasanoff.ai Guide
         </p>
         <h1
           style={{

@@ -176,7 +176,7 @@ export default function HubPage() {
               letterSpacing: '-0.02em',
             }}
           >
-            Explorations
+            Guide
           </h1>
           <p
             style={{
@@ -189,7 +189,7 @@ export default function HubPage() {
               lineHeight: 1.7,
             }}
           >
-            AI-guided journeys into self-knowledge. Each Exploration is a thoughtful, unhurried conversation designed to help you see yourself more clearly.
+            AI-guided journeys into self-knowledge. Each Guide is a thoughtful, unhurried conversation designed to help you see yourself more clearly.
           </p>
         </div>
 
