@@ -41,7 +41,7 @@ const EXPLORATIONS: Exploration[] = [
     title: 'Better Decision',
     description:
       'A guided conversation with an AI advisor that helps you move from confusion to clarity — and from clarity to commitment. Produces a one-page decision document written in your voice.',
-    stripeUrl: null,
+    stripeUrl: 'https://buy.stripe.com/3cIeVc26L4py0evdF12ZO04',
     path: '/better-decision',
   },
   {
