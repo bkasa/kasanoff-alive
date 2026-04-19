@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
-import { SessionData, sessionOptions } from '@/lib/session';
+import { SessionData, sessionOptions, SESSION_VERSION } from '@/lib/session';
 import { validateMagicLink, consumeMagicLink, findOrCreateSession } from '@/lib/queries';
 
 export async function POST(request: NextRequest) {
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     // Set session cookie
     const session = await getIronSession<SessionData>(cookies(), sessionOptions);
     session.customerEmail = email;
+    session.version = SESSION_VERSION;
     await session.save();
 
     return Response.json({ ok: true, sessionId, email });

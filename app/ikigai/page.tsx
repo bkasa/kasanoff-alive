@@ -145,22 +145,16 @@ function IkigaiPageInner() {
     setClaimError('');
     setClaimSending(true);
     try {
-      const res = await fetch('/api/auth/claim', {
+      const res = await fetch('/api/auth/request-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: claimEmail, explorationId: EXPLORATION_ID }),
       });
-      const data = await res.json();
-      if (data.ok) {
-        window.location.href = '/ikigai';
+      if (!res.ok) {
+        setClaimError('Something went wrong. Please try again.');
         return;
-      } else {
-        setClaimError(
-          res.status === 404
-            ? 'No purchase found for that email. Please check the address you used at checkout.'
-            : 'Something went wrong. Please try again.'
-        );
       }
+      setPhase('magic-link-sent');
     } catch {
       setClaimError('Something went wrong. Please try again.');
     } finally {
@@ -399,7 +393,7 @@ function IkigaiPageInner() {
               onMouseEnter={(e) => { if (!claimSending) (e.currentTarget.style.background = C.terracotta); }}
               onMouseLeave={(e) => { if (!claimSending) (e.currentTarget.style.background = C.gold); }}
             >
-              {claimSending ? 'Checking…' : 'Begin'}
+              {claimSending ? 'Sending…' : 'Begin'}
             </button>
           </form>
 
@@ -439,7 +433,7 @@ function IkigaiPageInner() {
             Check your email
           </h2>
           <p style={{ fontFamily: "'Source Sans 3', sans-serif", fontSize: '14px', color: C.charcoalLight, lineHeight: 1.6 }}>
-            We&apos;ve sent a one-click access link. It expires in 1 hour.
+            We&apos;ve sent a one-click access link to {claimEmail}. It expires in 30 minutes.
           </p>
         </div>
       </div>

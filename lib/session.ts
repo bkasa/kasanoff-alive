@@ -1,8 +1,11 @@
 import { SessionOptions } from 'iron-session';
 
+export const SESSION_VERSION = 1;
+
 export interface SessionData {
   customerEmail?: string;
   isAdmin?: boolean;
+  version?: number;
 }
 
 export const sessionOptions: SessionOptions = {

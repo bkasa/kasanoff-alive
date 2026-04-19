@@ -1,6 +1,6 @@
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
-import { SessionData, sessionOptions } from './session';
+import { SessionData, sessionOptions, SESSION_VERSION } from './session';
 import { hasPurchased, findOrCreateSession } from './queries';
 
 export interface AccessResult {
@@ -12,7 +12,7 @@ export interface AccessResult {
 export async function checkAccess(explorationId: string): Promise<AccessResult> {
   const session = await getIronSession<SessionData>(cookies(), sessionOptions);
 
-  if (!session.customerEmail) {
+  if (!session.customerEmail || session.version !== SESSION_VERSION) {
     return { allowed: false };
   }
 

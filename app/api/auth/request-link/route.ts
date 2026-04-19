@@ -1,44 +1,57 @@
 import { NextRequest } from 'next/server';
 import { nanoid } from 'nanoid';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { hasPurchased, createMagicLink } from '@/lib/queries';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const LINK_EXPIRY_HOURS = 1;
+const LINK_EXPIRY_MINUTES = 30;
+
+const EXPLORATION_TITLES: Record<string, string> = {
+  'ikigai': 'Ikigai Discovery',
+  'tell-your-story': 'Tell Your Story Better',
+  'better-decision': 'Better Decision',
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, explorationId } = await request.json();
+    const { email: rawEmail, explorationId } = await request.json();
+    const email = rawEmail?.toLowerCase();
 
     if (!email || !explorationId) {
       return Response.json({ error: 'Missing email or explorationId' }, { status: 400 });
     }
 
-    // Check they have actually purchased this Exploration
+    // Check purchase — return generic ok to avoid leaking purchase info
     const purchased = await hasPurchased(email, explorationId);
     if (!purchased) {
-      // Return generic message to avoid leaking purchase info
       return Response.json({ ok: true });
     }
 
     const token = nanoid(32);
-    const expiresAt = new Date(Date.now() + LINK_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + LINK_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
     await createMagicLink(email, token, explorationId, expiresAt);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const link = `${baseUrl}/${explorationId}?token=${token}`;
+    const title = EXPLORATION_TITLES[explorationId] || explorationId;
 
-    await sgMail.send({
+    await resend.emails.send({
+      from: 'Bruce Kasanoff <bruce@kasanoff.ai>',
       to: email,
-      from: 'hello@kasanoff.ai',
-      subject: 'Your access link',
-      text: `Here is your access link (valid for ${LINK_EXPIRY_HOURS} hour):\n\n${link}\n\nThis link can only be used once.`,
+      subject: `Your ${title} link`,
       html: `
-        <p>Here is your access link, valid for ${LINK_EXPIRY_HOURS} hour:</p>
-        <p><a href="${link}">${link}</a></p>
-        <p>This link can only be used once.</p>
+        <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #3D3229;">
+          <p style="font-size: 16px; line-height: 1.7;">Here is your one-click access link for <strong>${title}</strong>:</p>
+          <p style="margin: 24px 0;">
+            <a href="${link}" style="background: #D4A574; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-family: sans-serif; font-size: 14px; font-weight: 500;">
+              Open ${title} →
+            </a>
+          </p>
+          <p style="font-size: 13px; color: #6B5D50; line-height: 1.6;">This link is valid for ${LINK_EXPIRY_MINUTES} minutes and can only be used once. If you didn't request this, you can safely ignore it.</p>
+          <p style="font-size: 13px; color: #6B5D50;">Or copy this URL into your browser:<br />${link}</p>
+        </div>
       `,
     });
 
