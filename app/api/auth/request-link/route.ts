@@ -11,6 +11,7 @@ const EXPLORATION_TITLES: Record<string, string> = {
   'ikigai': 'Ikigai Discovery',
   'tell-your-story': 'Tell Your Story Better',
   'better-decision': 'Better Decision',
+  'career-checkup': 'Career Checkup',
 };
 
 export async function POST(request: NextRequest) {
