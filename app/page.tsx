@@ -49,7 +49,7 @@ const EXPLORATIONS: Exploration[] = [
     title: 'Career Checkup',
     description:
       'A deep coaching conversation for successful professionals who want to stay clear, focused, and aligned — not just when something feels wrong, but as a regular practice. Designed to take 3–6 hours. Most people find it changes something.',
-    stripeUrl: null,
+    stripeUrl: 'https://buy.stripe.com/eVq9ASeTx6xG4uLcAX2ZO05',
     path: '/career-checkup',
   },
   {
