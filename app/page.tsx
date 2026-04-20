@@ -45,6 +45,14 @@ const EXPLORATIONS: Exploration[] = [
     path: '/better-decision',
   },
   {
+    id: 'career-checkup',
+    title: 'Career Checkup',
+    description:
+      'A deep coaching conversation for successful professionals who want to stay clear, focused, and aligned — not just when something feels wrong, but as a regular practice. Designed to take 3–6 hours. Most people find it changes something.',
+    stripeUrl: null,
+    path: '/career-checkup',
+  },
+  {
     id: 'climbing',
     title: 'Am I Climbing the Right Mountain?',
     description:
