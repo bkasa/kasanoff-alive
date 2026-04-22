@@ -24,6 +24,7 @@ export async function recordPurchase(
   stripeSession: string,
   amountCents: number = 1800
 ) {
+  const email = customerEmail.toLowerCase();
   // Idempotent — skip if this Stripe session already recorded
   const existing = await db.execute({
     sql: `SELECT id FROM purchases WHERE stripe_session = ?`,
@@ -34,7 +35,7 @@ export async function recordPurchase(
   const result = await db.execute({
     sql: `INSERT INTO purchases (customer_email, exploration_id, stripe_session, amount_cents)
           VALUES (?, ?, ?, ?)`,
-    args: [customerEmail, explorationId, stripeSession, amountCents],
+    args: [email, explorationId, stripeSession, amountCents],
   });
   return result.lastInsertRowid;
 }
