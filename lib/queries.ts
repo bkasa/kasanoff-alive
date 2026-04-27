@@ -165,7 +165,7 @@ export async function createMagicLink(
 
 export async function validateMagicLink(token: string) {
   const result = await db.execute({
-    sql: `SELECT * FROM magic_links WHERE token = ? AND used = 0 AND expires_at > CURRENT_TIMESTAMP`,
+    sql: `SELECT * FROM magic_links WHERE token = ? AND used = 0 AND datetime(expires_at) > datetime('now')`,
     args: [token],
   });
   return result.rows.length > 0 ? result.rows[0] : null;
