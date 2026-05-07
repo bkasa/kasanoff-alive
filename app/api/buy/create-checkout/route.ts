@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://explore.kasanoff.ai';
+const BASE_URL = 'https://explore.kasanoff.ai';
 
 const PRODUCT_NAMES: Record<string, string> = {
   ikigai: 'Ikigai Explorer',
