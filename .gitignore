@@ -1,4 +1,11 @@
 .vercel
-.env.local
+.env*
+!.env.example
 data/
 node_modules/
+.next/
+.DS_Store
+*.local
+chris-hackett-documents/
+marcy-transcript.txt
+scripts/
