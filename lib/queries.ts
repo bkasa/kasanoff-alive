@@ -177,3 +177,39 @@ export async function consumeMagicLink(token: string) {
     args: [token],
   });
 }
+
+// ─── Gift Tokens ──────────────────────────────────────────────
+
+export async function createGiftToken(
+  token: string,
+  productSlug: string,
+  recipientName: string,
+  recipientEmail: string,
+  gifterName: string,
+  gifterEmail: string,
+  personalMessage: string | null
+) {
+  const now = Math.floor(Date.now() / 1000);
+  await db.execute({
+    sql: `INSERT INTO gift_tokens
+          (token, product_slug, recipient_name, recipient_email, gifter_name, gifter_email, personal_message, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [token, productSlug, recipientName, recipientEmail.toLowerCase(), gifterName, gifterEmail.toLowerCase(), personalMessage || null, now],
+  });
+}
+
+export async function getGiftToken(token: string) {
+  const result = await db.execute({
+    sql: `SELECT * FROM gift_tokens WHERE token = ?`,
+    args: [token],
+  });
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+export async function markGiftTokenFirstAccessed(token: string) {
+  const now = Math.floor(Date.now() / 1000);
+  await db.execute({
+    sql: `UPDATE gift_tokens SET first_accessed_at = ? WHERE token = ? AND first_accessed_at IS NULL`,
+    args: [now, token],
+  });
+}

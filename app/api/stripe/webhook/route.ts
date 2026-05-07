@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
-import { upsertCustomer, recordPurchase } from '@/lib/queries';
+import { randomUUID } from 'crypto';
+import { upsertCustomer, recordPurchase, createGiftToken } from '@/lib/queries';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -67,27 +68,69 @@ export async function POST(request: NextRequest) {
       return new Response('ok', { status: 200 });
     }
 
+    const isGift = session.metadata?.gift === 'true';
+
     if (email) {
       await upsertCustomer(email);
       await recordPurchase(email, explorationId, session.id);
-      console.log('Purchase recorded for:', email, 'exploration:', explorationId);
+      console.log('Purchase recorded for:', email, 'exploration:', explorationId, 'gift:', isGift);
 
-      // Send confirmation email
-      const fullName: string = session.customer_details?.name || '';
-      const firstName = fullName.trim().split(/\s+/)[0] || 'there';
-      const explorationTitle = EXPLORATION_TITLES[explorationId] || explorationId;
+      if (!isGift) {
+        // ── Non-gift: existing confirmation email flow (unchanged) ──
+        const fullName: string = session.customer_details?.name || '';
+        const firstName = fullName.trim().split(/\s+/)[0] || 'there';
+        const explorationTitle = EXPLORATION_TITLES[explorationId] || explorationId;
 
-      try {
-        await resend.emails.send({
-          from: 'Bruce Kasanoff <bruce@kasanoff.ai>',
-          replyTo: 'bruce@kasanoff.com',
-          to: email,
-          subject: `Your ${explorationTitle} is ready.`,
-          text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nTo access your tool, please go to https://explore.kasanoff.ai/${explorationId} and enter the email you used to place your order. If you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
-        });
-        console.log('Confirmation email sent to:', email);
-      } catch (emailErr) {
-        console.error('Failed to send confirmation email:', emailErr);
+        try {
+          await resend.emails.send({
+            from: 'Bruce Kasanoff <bruce@kasanoff.ai>',
+            replyTo: 'bruce@kasanoff.com',
+            to: email,
+            subject: `Your ${explorationTitle} is ready.`,
+            text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nTo access your tool, please go to https://explore.kasanoff.ai/${explorationId} and enter the email you used to place your order. If you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
+          });
+          console.log('Confirmation email sent to:', email);
+        } catch (emailErr) {
+          console.error('Failed to send confirmation email:', emailErr);
+        }
+      } else {
+        // ── Gift: create token, email the recipient ──
+        const gifterName: string = session.metadata?.buyer_name || session.customer_details?.name || '';
+        const gifterEmail: string = email;
+        const recipientName: string = session.metadata?.recipient_name || '';
+        const recipientEmail: string = session.metadata?.recipient_email || '';
+        const personalMessage: string = session.metadata?.personal_message || '';
+
+        if (!recipientEmail) {
+          console.error('Gift purchase missing recipient_email in metadata, session:', session.id);
+        } else {
+          const token = randomUUID();
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://explore.kasanoff.ai';
+
+          await createGiftToken(token, explorationId, recipientName, recipientEmail, gifterName, gifterEmail, personalMessage || null);
+          console.log('Gift token created:', token, 'for recipient:', recipientEmail);
+
+          const giftLink = `${baseUrl}/gift/access/${token}`;
+          const recipientFirstName = recipientName.trim().split(/\s+/)[0] || 'there';
+          const gifterFirstName = gifterName.trim().split(/\s+/)[0] || 'Someone';
+
+          const messageSection = personalMessage
+            ? `\n\nA personal note from ${gifterFirstName}:\n\n"${personalMessage}"`
+            : '';
+
+          try {
+            await resend.emails.send({
+              from: 'Bruce Kasanoff <bruce@kasanoff.ai>',
+              replyTo: 'bruce@kasanoff.com',
+              to: recipientEmail,
+              subject: `${gifterName} has given you a gift`,
+              text: `Hi, ${recipientFirstName} -\n\n${gifterName} has given you free access to Ikigai Explorer. To begin using it, visit this link:\n\n${giftLink}${messageSection}\n\nIf you have any questions, reply to this email.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
+            });
+            console.log('Gift email sent to:', recipientEmail);
+          } catch (emailErr) {
+            console.error('Failed to send gift email:', emailErr);
+          }
+        }
       }
     } else {
       console.error('No email found in webhook payload:', JSON.stringify(session));
