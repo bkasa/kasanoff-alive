@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           console.error('Gift purchase missing recipient_email in metadata, session:', session.id);
         } else {
           const token = randomUUID();
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://explore.kasanoff.ai';
+          const baseUrl = 'https://explore.kasanoff.ai';
 
           await createGiftToken(token, explorationId, recipientName, recipientEmail, gifterName, gifterEmail, personalMessage || null);
           console.log('Gift token created:', token, 'for recipient:', recipientEmail);
