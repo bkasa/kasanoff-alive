@@ -6,7 +6,7 @@ import { findMostRecentPurchase, getPurchaseAccessStatus } from '@/lib/access';
 const EXPLORATION_ID = 'hard-conversation';
 
 // Stripe payment link URL — update after creating the product
-const STRIPE_URL = '';
+const STRIPE_URL = 'https://buy.stripe.com/00w9AS7r5f4cgdteJ52ZO06';
 
 export async function GET() {
   try {
