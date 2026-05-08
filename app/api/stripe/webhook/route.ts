@@ -11,6 +11,7 @@ const EXPLORATION_TITLES: Record<string, string> = {
   'tell-your-story': 'Tell Your Story Better',
   'better-decision': 'Better Decision',
   'career-checkup': 'Career Checkup',
+  'hard-conversation': 'The Hard Conversation',
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -72,8 +73,17 @@ export async function POST(request: NextRequest) {
 
     if (email) {
       await upsertCustomer(email);
-      await recordPurchase(email, explorationId, session.id);
-      console.log('Purchase recorded for:', email, 'exploration:', explorationId, 'gift:', isGift);
+
+      // hard-conversation gets a 90-day expiry window
+      let expiresAt: string | null = null;
+      if (explorationId === 'hard-conversation') {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 90);
+        expiresAt = expiry.toISOString();
+      }
+
+      await recordPurchase(email, explorationId, session.id, 1800, expiresAt);
+      console.log('Purchase recorded for:', email, 'exploration:', explorationId, 'gift:', isGift, 'expiresAt:', expiresAt);
 
       if (!isGift) {
         // ── Non-gift: existing confirmation email flow (unchanged) ──

@@ -22,7 +22,8 @@ export async function recordPurchase(
   customerEmail: string,
   explorationId: string,
   stripeSession: string,
-  amountCents: number = 1800
+  amountCents: number = 1800,
+  expiresAt: string | null = null
 ) {
   const email = customerEmail.toLowerCase();
   // Idempotent — skip if this Stripe session already recorded
@@ -33,9 +34,9 @@ export async function recordPurchase(
   if (existing.rows.length > 0) return existing.rows[0].id;
 
   const result = await db.execute({
-    sql: `INSERT INTO purchases (customer_email, exploration_id, stripe_session, amount_cents)
-          VALUES (?, ?, ?, ?)`,
-    args: [email, explorationId, stripeSession, amountCents],
+    sql: `INSERT INTO purchases (customer_email, exploration_id, stripe_session, amount_cents, expires_at)
+          VALUES (?, ?, ?, ?, ?)`,
+    args: [email, explorationId, stripeSession, amountCents, expiresAt],
   });
   return result.lastInsertRowid;
 }
@@ -211,5 +212,91 @@ export async function markGiftTokenFirstAccessed(token: string) {
   await db.execute({
     sql: `UPDATE gift_tokens SET first_accessed_at = ? WHERE token = ? AND first_accessed_at IS NULL`,
     args: [now, token],
+  });
+}
+
+// ─── Hard Conversation ────────────────────────────────────────
+
+export async function findOrCreatePrepSession(
+  customerEmail: string,
+  explorationId: string
+): Promise<number> {
+  const email = customerEmail.toLowerCase();
+  const existing = await db.execute({
+    sql: `SELECT id FROM sessions
+          WHERE customer_email = ? AND exploration_id = ? AND kind = 'prep' AND status = 'in_progress'
+          ORDER BY started_at DESC LIMIT 1`,
+    args: [email, explorationId],
+  });
+  if (existing.rows.length > 0) return Number(existing.rows[0].id);
+
+  const result = await db.execute({
+    sql: `INSERT INTO sessions (customer_email, exploration_id, kind) VALUES (?, ?, 'prep')`,
+    args: [email, explorationId],
+  });
+  return Number(result.lastInsertRowid);
+}
+
+export async function createDebriefSession(
+  customerEmail: string,
+  explorationId: string
+): Promise<number> {
+  const result = await db.execute({
+    sql: `INSERT INTO sessions (customer_email, exploration_id, kind) VALUES (?, ?, 'debrief')`,
+    args: [customerEmail.toLowerCase(), explorationId],
+  });
+  return Number(result.lastInsertRowid);
+}
+
+export async function getCurrentSessionKind(
+  customerEmail: string,
+  explorationId: string
+): Promise<'prep' | 'debrief' | null> {
+  const result = await db.execute({
+    sql: `SELECT id, kind FROM sessions
+          WHERE customer_email = ? AND exploration_id = ? AND status = 'in_progress'
+          ORDER BY started_at DESC LIMIT 1`,
+    args: [customerEmail.toLowerCase(), explorationId],
+  });
+  if (result.rows.length === 0) return null;
+  return (result.rows[0].kind as 'prep' | 'debrief') || null;
+}
+
+export async function getCurrentSessionId(
+  customerEmail: string,
+  explorationId: string
+): Promise<number | null> {
+  const result = await db.execute({
+    sql: `SELECT id FROM sessions
+          WHERE customer_email = ? AND exploration_id = ? AND status = 'in_progress'
+          ORDER BY started_at DESC LIMIT 1`,
+    args: [customerEmail.toLowerCase(), explorationId],
+  });
+  if (result.rows.length === 0) return null;
+  return Number(result.rows[0].id);
+}
+
+export async function markPrepComplete(
+  customerEmail: string,
+  explorationId: string
+): Promise<void> {
+  await db.execute({
+    sql: `UPDATE purchases SET prep_complete = 1
+          WHERE customer_email = ? AND exploration_id = ?
+            AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))`,
+    args: [customerEmail.toLowerCase(), explorationId],
+  });
+}
+
+export async function saveArchivedDocument(
+  customerEmail: string,
+  explorationId: string,
+  document: string
+): Promise<void> {
+  await db.execute({
+    sql: `UPDATE purchases SET archived_document = ?
+          WHERE customer_email = ? AND exploration_id = ?
+            AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))`,
+    args: [document, customerEmail.toLowerCase(), explorationId],
   });
 }
