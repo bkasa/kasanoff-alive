@@ -12,6 +12,7 @@ const EXPLORATION_TITLES: Record<string, string> = {
   'better-decision': 'Better Decision',
   'career-checkup': 'Career Checkup',
   'hard-conversation': 'The Hard Conversation',
+  'treasure-resistance': 'Treasure Resistance',
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -74,9 +75,9 @@ export async function POST(request: NextRequest) {
     if (email) {
       await upsertCustomer(email);
 
-      // hard-conversation gets a 90-day expiry window
+      // hard-conversation and treasure-resistance get a 90-day expiry window
       let expiresAt: string | null = null;
-      if (explorationId === 'hard-conversation') {
+      if (explorationId === 'hard-conversation' || explorationId === 'treasure-resistance') {
         const expiry = new Date();
         expiry.setDate(expiry.getDate() + 90);
         expiresAt = expiry.toISOString();
