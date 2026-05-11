@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const LINK_EXPIRY_MINUTES = 30;
 
 const EXPLORATION_TITLES: Record<string, string> = {
-  'ikigai': 'Ikigai Discovery',
+  'ikigai': 'Ikigai Explorer',
   'tell-your-story': 'Tell Your Story Better',
   'better-decision': 'Better Decision',
   'career-checkup': 'Career Checkup',

@@ -211,7 +211,7 @@ function IkigaiPageInner() {
 
   function downloadTranscript() {
     const lines = messages.map((m) => `${m.role === 'user' ? 'You' : 'Guide'}: ${m.content}`);
-    const text = `Ikigai Discovery — Conversation Transcript\n${'─'.repeat(44)}\n\n${lines.join('\n\n')}`;
+    const text = `Ikigai Explorer — Conversation Transcript\n${'─'.repeat(44)}\n\n${lines.join('\n\n')}`;
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -468,7 +468,7 @@ function IkigaiPageInner() {
           Kasanoff.ai Guide
         </p>
         <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 'clamp(26px, 5vw, 36px)', fontWeight: 300, color: C.charcoal, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-          Ikigai Discovery
+          Ikigai Explorer
         </h1>
         <p style={{ fontFamily: "'Source Sans 3', sans-serif", fontSize: '13px', color: C.charcoalLight, margin: 0 }}>
           What were you meant to do?

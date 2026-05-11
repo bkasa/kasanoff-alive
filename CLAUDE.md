@@ -29,7 +29,7 @@ If TYPE is not specified, default to `conversation`.
 
 ### Type 1: `conversation`
 A reflective dialogue that ends with insight. No documents produced.
-Examples: Ikigai Discovery, Shadow Work, Life Chapter.
+Examples: Ikigai Explorer, Shadow Work, Life Chapter.
 → Use the standard `_template` as-is.
 
 ### Type 2: `document-generator`
