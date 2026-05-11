@@ -2,12 +2,13 @@ import { NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { randomUUID } from 'crypto';
-import { upsertCustomer, recordPurchase, createGiftToken } from '@/lib/queries';
+import { nanoid } from 'nanoid';
+import { upsertCustomer, recordPurchase, createGiftToken, createMagicLink } from '@/lib/queries';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const EXPLORATION_TITLES: Record<string, string> = {
-  'ikigai': 'Ikigai Discovery',
+  'ikigai': 'Ikigai Explorer',
   'tell-your-story': 'Tell Your Story Better',
   'better-decision': 'Better Decision',
   'career-checkup': 'Career Checkup',
@@ -18,6 +19,8 @@ const EXPLORATION_TITLES: Record<string, string> = {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
+
+const MAGIC_LINK_EXPIRY_DAYS = 7;
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -87,10 +90,16 @@ export async function POST(request: NextRequest) {
       console.log('Purchase recorded for:', email, 'exploration:', explorationId, 'gift:', isGift, 'expiresAt:', expiresAt);
 
       if (!isGift) {
-        // ── Non-gift: existing confirmation email flow (unchanged) ──
         const fullName: string = session.customer_details?.name || '';
         const firstName = fullName.trim().split(/\s+/)[0] || 'there';
         const explorationTitle = EXPLORATION_TITLES[explorationId] || explorationId;
+        const baseUrl = 'https://explore.kasanoff.ai';
+
+        // Generate a 7-day magic link for immediate post-purchase access
+        const token = nanoid(32);
+        const linkExpiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+        await createMagicLink(email, token, explorationId, linkExpiresAt);
+        const magicLink = `${baseUrl}/${explorationId}?token=${token}`;
 
         try {
           await resend.emails.send({
@@ -98,9 +107,9 @@ export async function POST(request: NextRequest) {
             replyTo: 'bruce@kasanoff.com',
             to: email,
             subject: `Your ${explorationTitle} is ready.`,
-            text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nTo access your tool, please go to https://explore.kasanoff.ai/${explorationId} and enter the email you used to place your order. If you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
+            text: `Hi, ${firstName} -\n\nThank you for ordering ${explorationTitle}. I promise this is going to be a remarkable experience.\n\nClick the link below to begin your exploration:\n\n${magicLink}\n\nTo protect your privacy and security, this link is unique to you and will work for the next ${MAGIC_LINK_EXPIRY_DAYS} days. If you'd rather start later or from a different device, you can always go to ${baseUrl}/${explorationId} and enter the email you used at checkout — I'll send you a fresh link.\n\nIf you ever have any questions, please reply to me at this email.\n\nOnce you have finished your exploration, I'd love to hear about your experience.\n\nWith gratitude,\nBruce\nKasanoff.ai | bruce@kasanoff.com`,
           });
-          console.log('Confirmation email sent to:', email);
+          console.log('Confirmation email with magic link sent to:', email);
         } catch (emailErr) {
           console.error('Failed to send confirmation email:', emailErr);
         }
